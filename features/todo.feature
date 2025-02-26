@@ -1,6 +1,6 @@
 Feature: Todo Management test cases
 
-  Scenario: Add a new todo
+  Scenario: Add a new todo *
     Given I open the TodoMVC app
     When I add a new todo "Buy groceries"
     Then I should see "Buy groceries" in the todo list
