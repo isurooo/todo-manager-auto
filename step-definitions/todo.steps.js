@@ -1,49 +1,51 @@
-import { Given, When, Then } from '@cucumber/cucumber';
+import { Given, When, Then , After } from '@cucumber/cucumber';
 import { expect } from 'chai';
 import { chromium } from 'playwright';
+import { TodoPage } from './todo.page.js';
 
-let browser, page;
+let browser, page, todoPage;
 
 Given('I open the TodoMVC app', async function () {
   browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
   page = await context.newPage();
+  todoPage = new TodoPage(page);
   await page.goto('https://todomvc.com/examples/react/dist/');
 });
 
 When('I add a new todo {string}', async function (todo) {
-  await page.fill('.new-todo', todo);
-  await page.press('.new-todo', 'Enter');
+  await todoPage.addTodo(todo);
 });
 
 Then('I should see {string} in the todo list', async function (todo) {
-  
-  const todoItem = await page.locator('.todo-list').innerText();
-  expect(todoItem).to.include(todo);
-  console.log("After the list");
+  expect(await todoPage.isTodoVisible(todo)).to.be.true;
 });
 
 Given('I have a todo {string}', async function (todo) {
-  await page.fill('.new-todo', todo);
-  await page.press('.new-todo', 'Enter');
+  await todoPage.addTodo(todo);
 });
 
 When('I mark the todo {string} as completed', async function (todo) {
-  await page.locator(`.todo-list li:has-text("${todo}") .toggle`).click();
+  await todoPage.markTodoAsCompleted(todo);
 });
 
 Then('the todo {string} should be marked as completed', async function (todo) {
-  const completed = await page.locator(`.todo-list li:has-text("${todo}")`).getAttribute('class');
-  expect(completed).to.include('completed');
+  expect(await todoPage.isTodoCompleted(todo)).to.be.true;
+});
+
+When('I edit the todo {string} to {string}', async function (oldTodo, newTodo) {
+  await todoPage.editTodo(oldTodo, newTodo);
 });
 
 When('I delete the todo {string}', async function (todo) {
-  await page.hover(`.todo-list li:has-text("${todo}")`);
-  await page.locator(`.todo-list li:has-text("${todo}") .destroy`).click();
+  await todoPage.deleteTodo(todo);
 });
 
 Then('the todo {string} should not be visible', async function (todo) {
-  const todoExists = await page.locator(`.todo-list li:has-text("${todo}")`).count();
-  expect(todoExists).to.equal(0);
+  
+  expect(await todoPage.isTodoVisible(todo)).to.be.false;
 });
 
+// After(async function () {
+//   await browser.close();
+// });
